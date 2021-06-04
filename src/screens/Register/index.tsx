@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
+import uuid from 'react-native-uuid';
 import { Alert, Keyboard, Modal, TouchableWithoutFeedback } from 'react-native';
 import { CategorySelect } from '../CategorySelect';
 import { Button } from '../../components/Form/Button';
 import { CategorySelectButton } from '../../components/Form/CategorySelectButton';
-import { Input } from '../../components/Form/Input';
 import { InputForm } from '../../components/Form/InputForm';
 import { TransactionTypeButton } from '../../components/Form/TransactionTypeButton';
-
+import { useNavigation } from '@react-navigation/native';
 import {
   Container,
   Header,
@@ -18,6 +18,7 @@ import {
   Fields,
   TransactionsTypes,
 } from './styles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface FormData {
   name: string;
@@ -36,8 +37,11 @@ export function Register() {
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema) });
+
+  const navigation = useNavigation();
 
   const [transactionType, setTransactionType] = useState('');
   const [category, setCategory] = useState({
@@ -58,7 +62,7 @@ export function Register() {
     setIsCategoryModalOpen(false);
   };
 
-  const handleRegister = (form: FormData) => {
+  const handleRegister = async (form: FormData) => {
     if (!transactionType) {
       return Alert.alert('Selecione o tipo da transação.');
     }
@@ -67,13 +71,37 @@ export function Register() {
       return Alert.alert('Selecione uma categoria.');
     }
 
-    const data = {
+    const newTransaction = {
+      id: String(uuid.v4()),
       name: form.name,
       amount: form.amount,
-      transactionType,
+      type: transactionType,
       category: category.key,
+      date: new Date(),
     };
-    console.log(data);
+    console.log({ newTransaction });
+    try {
+      const dataKey = '@gofinances:transactions';
+
+      const data = await AsyncStorage.getItem(dataKey);
+      const currentData = data ? JSON.parse(data) : [];
+
+      const formattedData = [...currentData, newTransaction];
+      await AsyncStorage.setItem(dataKey, JSON.stringify(formattedData));
+
+      reset();
+
+      setTransactionType('');
+      setCategory({
+        key: 'category',
+        name: 'Categoria',
+      });
+
+      navigation.navigate('Listagem');
+    } catch (err) {
+      console.log(err);
+      Alert.alert('Não foi possível salvar.');
+    }
   };
 
   return (
