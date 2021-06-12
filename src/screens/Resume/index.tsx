@@ -26,6 +26,7 @@ import {
 
 import { categories } from '../../utils/categories';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../../hooks/auth';
 
 interface TransactionData {
   type: 'up' | 'down';
@@ -53,6 +54,7 @@ export function Resume() {
   );
 
   const theme = useTheme();
+  const { user } = useAuth();
 
   useFocusEffect(
     useCallback(() => {
@@ -69,7 +71,7 @@ export function Resume() {
   };
 
   const loadData = async () => {
-    const dataKey = '@gofinances:transactions';
+    const dataKey = `@gofinances:transactions_user:${user.id}`;
     setIsLoading(true);
 
     const response = await AsyncStorage.getItem(dataKey);

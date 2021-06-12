@@ -19,6 +19,7 @@ import {
   TransactionsTypes,
 } from './styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../hooks/auth';
 
 interface FormData {
   name: string;
@@ -42,6 +43,7 @@ export function Register() {
   } = useForm({ resolver: yupResolver(schema) });
 
   const navigation = useNavigation();
+  const { user } = useAuth();
 
   const [transactionType, setTransactionType] = useState('');
   const [category, setCategory] = useState({
@@ -79,9 +81,9 @@ export function Register() {
       category: category.key,
       date: new Date(),
     };
-    console.log({ newTransaction });
+
     try {
-      const dataKey = '@gofinances:transactions';
+      const dataKey = `@gofinances:transactions_user:${user.id}`;
 
       const data = await AsyncStorage.getItem(dataKey);
       const currentData = data ? JSON.parse(data) : [];
